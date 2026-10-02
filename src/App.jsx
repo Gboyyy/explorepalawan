@@ -112,7 +112,7 @@ function GalleryTile({ wiki, cap, onOpen }) {
       <WikiPhoto title={wiki} alt={cap} width={500} />
       <figcaption>
         <strong>{cap}</strong>
-        {data?.page && <a href={data.page} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>Photo: Wikipedia</a>}
+        {data?.page && <a href={data.page} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>{data.credit || "Photo: Wikipedia"}</a>}
       </figcaption>
     </figure>
   );

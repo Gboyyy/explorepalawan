@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 
-const cache = {};
+const cache = {
+  Port_Barton: {
+    src: `${import.meta.env.BASE_URL}images/port-barton.jpg`,
+    page: "https://commons.wikimedia.org/wiki/File:Port_Barton_Beach,_Palawan,_Philippines.jpg",
+    credit: "Vyacheslav Argenberg ? CC BY 4.0",
+  },
+};
 export default function useWiki(title) {
   const [data, setData] = useState(cache[title] ?? null);
   useEffect(() => {
