@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon, Logo, WaveDivider, WikiPhoto } from "./Media.jsx";
 import "./App.css";
-import useWiki from "./useWiki.js";
+import useWiki, { useWikiPhotos } from "./useWiki.js";
 
 /* ---------- DATA (edit to customize) ---------- */
 const BUSINESS = {
@@ -48,13 +48,6 @@ const GALLERY = [
   ["San_Vicente,_Palawan", "San Vicente"], ["Busuanga,_Palawan", "Busuanga Island"], ["Honda_Bay", "Honda Bay"], ["Puerto_Princesa", "Puerto Princesa City"],
 ];
 
-const EXTRA_PHOTOS = {
-  Puerto_Princesa_Underground_River: [["Sabang,_Palawan", "Sabang coast"], ["Puerto_Princesa", "Puerto Princesa"]],
-  "El_Nido,_Palawan": [["Bacuit", "Bacuit Bay"], ["Palawan", "Palawan scenery"]],
-  Puerto_Princesa: [["Puerto_Princesa_Cathedral", "Puerto Princesa Cathedral"], ["Honda_Bay", "Honda Bay"]],
-  "Coron,_Palawan": [["Kayangan_Lake", "Kayangan Lake"], ["Coron_Island", "Coron Island"]],
-  Honda_Bay: [["Puerto_Princesa", "Puerto Princesa coast"], ["Palawan", "Palawan islands"]],
-};
 const today = () => {
   const date = new Date();
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -106,10 +99,10 @@ function SectionTitle({ eyebrow, title, sub }) {
 }
 
 function GalleryTile({ wiki, cap, onOpen }) {
-  const data = useWiki(wiki);
+  const data = useWiki(wiki, 3);
   return (
     <figure className="tile" tabIndex={0} onClick={() => onOpen([wiki, cap])} onKeyDown={(e) => e.key === "Enter" && onOpen([wiki, cap])}>
-      <WikiPhoto title={wiki} alt={cap} width={500} />
+      <WikiPhoto title={wiki} photoIndex={3} alt={cap} width={500} />
       <figcaption>
         <strong>{cap}</strong>
         {data?.page && <a href={data.page} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>{data.credit || "Photo: Wikipedia"}</a>}
@@ -127,12 +120,14 @@ function DetailsDialog({ item, onClose, onBook }) {
     dialog.showModal();
     return () => { document.body.style.overflow = previousOverflow; dialog.close(); };
   }, []);
-  const photos = [[item.wiki, item.name], ...(EXTRA_PHOTOS[item.wiki] || [["Palawan", "Palawan scenery"], ["Port_Barton", "Port Barton"]])];
+  const photos = useWikiPhotos(item.wiki);
   return <dialog ref={ref} className="details-dialog" onCancel={onClose} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} aria-labelledby="details-title">
     <div className="details-content">
       <button className="btn small outline close-details" onClick={onClose} autoFocus aria-label="Close details">Close ?</button>
       <h2 id="details-title">{item.name}</h2>
-      <div className="detail-photos">{photos.map(([wiki, caption], i) => <figure key={`${wiki}-${i}`}><WikiPhoto title={wiki} alt={caption} width={960} /><figcaption>{caption} ? <a href={`https://en.wikipedia.org/wiki/${wiki}`} target="_blank" rel="noreferrer">Photo source & license</a></figcaption></figure>)}</div>
+      <div className="detail-photos">
+        {photos === null ? <p aria-live="polite">Loading destination photos?</p> : photos.length ? photos.map((photo, i) => <figure key={photo.src}><img src={photo.src} alt={`${item.name} ? ${photo.caption || `view ${i + 1}`}`} loading="lazy" /><figcaption>{photo.caption || item.name} ? <a href={photo.page} target="_blank" rel="noreferrer">Photo source & license</a></figcaption></figure>) : <p>Photos are unavailable right now. <a href={`https://commons.wikimedia.org/wiki/Special:MediaSearch?type=image&search=${encodeURIComponent(item.name + " Palawan")}`} target="_blank" rel="noreferrer">Browse destination photos on Wikimedia Commons</a>.</p>}
+      </div>
       {item.includes ? <>
         <p className="price">{peso(item.price)} per person</p><p>{item.duration} ? {item.target}</p>
         <h3>Inclusions</h3><ul>{item.includes.map((text) => <li key={text}>{text}</li>)}</ul>
@@ -247,7 +242,7 @@ export default function App() {
             {PACKAGES.map((p) => (
               <article className="card package clickable-card" key={p.id} onClick={() => setDetails(p)}>
                 <div className="media">
-                  <WikiPhoto title={p.wiki} alt={p.name} hue={p.hue} />
+                  <WikiPhoto photoIndex={1} title={p.wiki} alt={p.name} hue={p.hue} />
                   <span className="ribbon">{p.badge}</span>
                   <span className="price-pill">{peso(p.price)}<small>/pax</small></span>
                 </div>
@@ -275,11 +270,11 @@ export default function App() {
           <div className="gallery">
             {GALLERY.map(([wiki, cap]) => <GalleryTile key={wiki} wiki={wiki} cap={cap} onOpen={setLightbox} />)}
           </div>
-          <p className="muted center">Each photo links to its Wikipedia article, where the author and license are listed. Replace with your own photos for a final version if preferred.</p>
+          <p className="muted center">Each photo links to its Wikimedia source, where the author and license are listed.</p>
         </section>
         {lightbox && (
           <div className="lightbox" onClick={() => setLightbox(null)} role="dialog" aria-label="Enlarged photo">
-            <figure><WikiPhoto title={lightbox[0]} alt={lightbox[1]} width={960} /><figcaption>{lightbox[1]} — tap anywhere to close</figcaption></figure>
+            <figure><WikiPhoto photoIndex={3} title={lightbox[0]} alt={lightbox[1]} width={960} /><figcaption>{lightbox[1]} — tap anywhere to close</figcaption></figure>
           </div>
         )}
 
@@ -289,7 +284,7 @@ export default function App() {
           <div className="grid four">
             {DESTINATIONS.map((d) => (
               <article className="card dest clickable-card" key={d.name} onClick={() => setDetails(d)}>
-                <div className="media short"><WikiPhoto title={d.wiki} alt={d.name} hue={d.hue} /><span className="ribbon">{d.tag}</span></div>
+                <div className="media short"><WikiPhoto photoIndex={2} title={d.wiki} alt={d.name} hue={d.hue} /><span className="ribbon">{d.tag}</span></div>
                 <div className="body">
                   <h3>{d.name}</h3>
                   <p>{d.blurb}</p>

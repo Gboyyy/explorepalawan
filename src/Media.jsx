@@ -97,10 +97,10 @@ export function Scene({ label, hue = 190 }) {
 
 /* ---------- ONLINE PHOTOS via Wikipedia REST API (free, licensed, CORS-enabled) ---------- */
 // Wikimedia only serves standard thumbnail widths: 500, 960, 1280 are safe.
-export function WikiPhoto({ title, alt, width = 500, hue = 190 }) {
-  const data = useWiki(title);
-  const [bad, setBad] = useState(false);
+export function WikiPhoto({ title, alt, width = 500, hue = 190, photoIndex = 0 }) {
+  const data = useWiki(title, photoIndex);
+  const [failedSrc, setFailedSrc] = useState(null);
   if (data === null) return <div className="skeleton" aria-busy="true" />;
-  if (!data.src || bad) return <Scene label={alt} hue={hue} />;
-  return <img src={data.src.replace(/\/\d+px-/, `/${width}px-`)} alt={alt} loading="lazy" onError={() => setBad(true)} />;
+  if (!data.src || failedSrc === data.src) return <Scene label={alt} hue={hue} />;
+  return <img src={data.src} width={width} alt={alt} loading="lazy" onError={() => setFailedSrc(data.src)} />;
 }
